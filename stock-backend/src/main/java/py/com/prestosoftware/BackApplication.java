@@ -18,6 +18,6 @@ public class BackApplication  {
 	
 	public static void main(String[] args) {
         SpringApplication.run(BackApplication.class, args);
-        LOGGER.info("Agroprogreso backend started on the configured server port");
+        LOGGER.info("Farmacia backend started on the configured server port");
 	}	
 }

@@ -48,7 +48,7 @@ public class ProductoController {
 
     @GetMapping
     public List<Producto> findAll() {
-        return repository.findAll();
+        return service.findAll();
     }
 
     @GetMapping("/{id}")
@@ -130,6 +130,18 @@ public class ProductoController {
                     relationship + " no encontrado: " + id);
         }
         return persistedReference;
+    }
+
+    @PutMapping("/{id}/lote/activar")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void activarLote(@PathVariable Long id) {
+        service.activarLote(id);
+    }
+
+    @PutMapping("/{id}/lote/inactivar")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void inactivarLote(@PathVariable Long id) {
+        service.inactivarLote(id);
     }
 
     @DeleteMapping("/{id}")

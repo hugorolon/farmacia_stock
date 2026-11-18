@@ -1,5 +1,6 @@
 package py.com.prestosoftware.data.dtos;
 
+import java.math.BigInteger;
 import java.util.Date;
 
 
@@ -25,7 +26,8 @@ public class ProductoDTO {
 	private String imagenUrl;
 	private GrupoDTO grupo;
 	private SubgrupoDTO subgrupo;
-	
+	private int esLote;
+	private String principioActivo;
 	private NcmDTO ncm;
 	
 	private CategoriaDTO categoria;
@@ -68,6 +70,7 @@ public class ProductoDTO {
 	private UsuarioDTO userUpdate; 
 	
 	private Date updatedDate;
+	private BigInteger codigoBarra;
 	
 	public ProductoDTO() {}
 	
@@ -506,6 +509,28 @@ public class ProductoDTO {
 
 	public void setFechaPromoFin(Date fechaPromoFin) {
 		this.fechaPromoFin = fechaPromoFin;
+	}
+
+	public int getEsLote() {
+		return esLote;
+	}
+	public void setEsLote(int esLote) {
+		this.esLote = esLote;
+	}
+
+	public BigInteger getCodigoBarra() {
+		return codigoBarra;
+	}
+
+	public void setCodigoBarra(BigInteger codigoBarra) {
+		this.codigoBarra = codigoBarra;
+	}
+
+	public String getPrincipioActivo() {
+		return principioActivo;
+	}
+	public void setPrincipioActivo(String principioActivo) {
+		this.principioActivo = principioActivo;
 	}
 
 	@Override

@@ -10,7 +10,7 @@
 	<packaging>jar</packaging>
 
 	<name>stock-backend</name>
-	<description>AGROPROGRESO</description>
+	<description>FARMACIA-SJN</description>
 
 	<parent>
 		<groupId>org.springframework.boot</groupId>

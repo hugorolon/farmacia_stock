@@ -1,8 +1,10 @@
 package py.com.prestosoftware.ui.shared;
 
 import java.awt.event.ActionListener;
+import java.awt.event.ItemListener;
 import java.awt.event.KeyListener;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JMenuItem;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
@@ -21,6 +23,14 @@ public abstract class AbstractFrameController {
     }
     
     protected void registerKeyEvent(JTextField text, KeyListener listener) {
+    	text.addKeyListener(listener);
+    }
+    
+    protected void registerAction(JCheckBox  button, ItemListener listener) {
+        button.addItemListener(listener);
+    }
+    
+    protected void registerKeyEvent(JCheckBox text, KeyListener listener) {
     	text.addKeyListener(listener);
     }
     

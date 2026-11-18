@@ -1,10 +1,5 @@
 package py.com.prestosoftware.domain.services;
 
-import py.com.prestosoftware.ui.helpers.GlobalVars;
-
-import py.com.prestosoftware.ui.viewmodel.ConsultaNota;
-
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -14,8 +9,6 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import py.com.prestosoftware.data.dtos.VentaDTO;
 import py.com.prestosoftware.data.models.AperturaCierreCaja;
@@ -44,7 +37,10 @@ import py.com.prestosoftware.data.repository.MovimientoItemIngresoRepository;
 import py.com.prestosoftware.data.repository.ProcesoCobroVentasRepository;
 import py.com.prestosoftware.data.repository.ProductoRepository;
 import py.com.prestosoftware.data.repository.VentaRepository;
+import py.com.prestosoftware.ui.helpers.GlobalVars;
+import py.com.prestosoftware.ui.viewmodel.ConsultaNota;
 import py.com.prestosoftware.util.Notifications;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class VentaService {
@@ -77,9 +73,7 @@ public class VentaService {
 		this.repositoryItemCuentaARecibir=repositoryItemCuentaARecibir;
 		this.repositoryMovimientoEgreso=repositoryMovimientoEgreso;
 		this.repositoryMovimientoItemEgreso=repositoryMovimientoItemEgreso;
-		// Copia con zona horaria local: si no, las fechas DATE ("2026-11-16") se reinterpretan
-		// en UTC al convertir la entidad a DTO y llegan al cliente con un dia menos.
-		this.objectMapper = objectMapper.copy().setTimeZone(java.util.TimeZone.getDefault());
+		this.objectMapper = objectMapper;
 	}
 
 	public List<Venta> findAll() {
@@ -129,7 +123,8 @@ public class VentaService {
 				venta.setCliente(n);
 			}
 			try {
-				v = repository.save(venta);			;
+				v = repository.save(venta);	
+				repository.flush();
 			} catch (Exception e) {
 				// TODO: handle exception
 			}
@@ -152,13 +147,13 @@ public class VentaService {
 					openMovimientoEgreso(cuentaARecibir);
 				}
 			}
-			repository.flush();
 			return v;
 	}
 
 	@Transactional(rollbackFor = RuntimeException.class)
 	public Venta saveRemoved(int lanzamientoCaja, Venta venta, List<VentaDetalle> items,  String condicion) throws RuntimeException{
 		Venta v = repository.save(venta);
+		repository.flush();
 		if (lanzamientoCaja == 0) {
 			try {
 				updateStockProductRemoved(items, lanzamientoCaja,1);
@@ -172,18 +167,17 @@ public class VentaService {
 			} catch (Exception e) {
 				// TODO: handle exception
 			}
+//			updateStockProduct(v.getItems(),lanzamientoCaja,1);
+//			openMovCaja(v, condicion);
+//			movimientoIngresoProcesoCobroVenta(v);
+//			if (!condicion.equalsIgnoreCase("Contado")) {
+//				CuentaARecibir cuentaARecibir = new CuentaARecibir();
+//				cuentaARecibir = cuentaARecibirProcesoCobroVenta(v, condicion);
+//				openMovimientoEgreso(cuentaARecibir);
+//			}
 		}
 		return v;
 	}
-
-	@Transactional(rollbackFor = RuntimeException.class)
-	public void saveTimbrado(String ventaId,  String nroTimbrado) throws RuntimeException{
-		Long venta= Long.valueOf(ventaId);
-		long timbrado =Long.valueOf(nroTimbrado);
-		repository.saveTimbrado(venta, timbrado);
-		repository.flush();
-	}
-	
 	
 	public Venta save(Venta venta) {
 		Venta v = repository.save(venta);
@@ -253,19 +247,18 @@ public class VentaService {
 			repositoryMovimientoItemEgreso.delete(movimientoItemEgreso);
 		}
 		repositoryMovimientoEgreso.delete(movEgreso);
+		repositoryMovimientoItemEgreso.flush();
+		repositoryMovimientoEgreso.flush();
+		
 	}
 	
 	public void remove(Venta venta) {
 		repository.delete(venta);
 	}
 
-	@Transactional(readOnly = true)
-	public Optional<VentaDTO> findById(Long id) {
-		// Carga cliente, empresa, vendedor, caja, deposito e items en una sola consulta
-		// y los copia al DTO (las propiedades con el mismo nombre se mapean automaticamente).
-		return repository.findWithRelationsById(id)
-				.map(venta -> objectMapper.convertValue(venta, VentaDTO.class));
-	}
+	//public Optional<Venta> findById(Long id) {
+	//	return repository.findById(id);
+	//}
 
 	public Optional<Venta> findNota(Long id, String situacion) {
 		return repository.findByIdAndSituacion(id, situacion);
@@ -275,10 +268,6 @@ public class VentaService {
 		return repository.getMaxId();
 	}
 
-	public Long getNroTimbrado() {
-		return repository.getMaxNroTimbrado();
-	}
-	
 	public List<Venta> findByClienteId(Long id) {
 		return repository.findByCliente(new Cliente(id));
 	}
@@ -488,9 +477,9 @@ public class VentaService {
 		if (condicion.toString().equalsIgnoreCase("Contado")) {
 			movCaja.setObs("Pagado en caja 01 ");
 			movCaja.setSituacion("PAGADO");
-		} else if (condicion.toString().equalsIgnoreCase("30 dÃ­as")) {
+		} else if (condicion.toString().equalsIgnoreCase("30 días")) {
 			cant = 1;// Integer.valueOf(tfCuotaCant.getText());
-			movCaja.setObs("CrÃ©dito a cuotas :" + cant);
+			movCaja.setObs("Crédito a cuotas :" + cant);
 			movCaja.setSituacion("PROCESADO");
 		} 
 		repositoryPago.save(movCaja);
@@ -523,13 +512,13 @@ public class VentaService {
 		double monto = (double) Math.round(venta.getTotalGeneral() / 11);
 		mii.setMiiMonto(monto);
 		repositoryMovimientoItemIngreso.save(mii);
+		repositoryMovimientoItemIngreso.flush();
 
 		MovimientoItemIngreso miiva = new MovimientoItemIngreso();
 		miiva.setMiiNumero(m.getMinNumero());
 		miiva.setMiiIngreso(11);
 		miiva.setMiiMonto(venta.getTotalGeneral() - monto);
 		repositoryMovimientoItemIngreso.save(miiva);
-		repositoryMovimientoIngreso.flush();
 		repositoryMovimientoItemIngreso.flush();
 
 		ProcesoCobroVentas pcv = new ProcesoCobroVentas();
@@ -554,7 +543,7 @@ public class VentaService {
 		cuentaARecibir.setCarProceso(venta.getId().intValue());
 		cuentaARecibir.setCarSituacion(0);
 		cuentaARecibir = repositoryCuentaARecibir.save(cuentaARecibir);
-		
+		repositoryCuentaARecibir.flush();
 
 		List<ItemCuentaARecibir> listaItemCuentaARecibir = new ArrayList<ItemCuentaARecibir>();
 
@@ -562,7 +551,7 @@ public class VentaService {
 		int cantDias = 0;
 		Date fechaVencimiento = new Date();
 		Calendar cal = Calendar.getInstance();
-		if (condicion.toString().equalsIgnoreCase("30 dÃ­as")) {
+		if (condicion.toString().equalsIgnoreCase("30 días")) {
 			cant = Integer.valueOf(1);
 			cantDias = 30;
 		}
@@ -584,7 +573,7 @@ public class VentaService {
 			listaItemCuentaARecibir.add(itemCuentaARecibir);
 		}
 		repositoryItemCuentaARecibir.saveAll(listaItemCuentaARecibir);
-		repositoryItemCuentaARecibir.flush();
+		
 		// Proceso Cobro ventas
 		ProcesoCobroVentas pcv = new ProcesoCobroVentas();
 		pcv.setPveVenta(venta.getId().intValue());
@@ -593,7 +582,7 @@ public class VentaService {
 		pcv.setPveProceso(cuentaARecibir.getCarNumero());
 		pcv.setPveFlag(1);
 		repositoryProcesoCobroVentas.save(pcv);
-		repositoryCuentaARecibir.flush();
+		repositoryItemCuentaARecibir.flush();
 		repositoryProcesoCobroVentas.flush();
 
 		return cuentaARecibir;
@@ -613,9 +602,28 @@ public class VentaService {
 		movItemEgreso.setMieNumero(movEgreso.getMegNumero());
 		movItemEgreso.setMieEgreso(31);
 		movItemEgreso.setMieMonto(c.getMonto());
-		movItemEgreso.setMieDescripcion("Egreso de efectivo - Venta CrÃ©dito");
+		movItemEgreso.setMieDescripcion("Egreso de efectivo - Venta Crédito");
 		repositoryMovimientoItemEgreso.save(movItemEgreso);
-		repositoryMovimientoEgreso.flush();
 		repositoryMovimientoItemEgreso.flush();
+	}
+
+	@Transactional(readOnly = true)
+	public Optional<VentaDTO> findById(Long id) {
+		// Carga cliente, empresa, vendedor, caja, deposito e items en una sola consulta
+		// y los copia al DTO (las propiedades con el mismo nombre se mapean automaticamente).
+		return repository.findWithRelationsById(id)
+				.map(venta -> objectMapper.convertValue(venta, VentaDTO.class));
+	}
+
+	@Transactional(rollbackFor = RuntimeException.class)
+	public void saveTimbrado(String ventaId,  String nroTimbrado) throws RuntimeException{
+		Long venta= Long.valueOf(ventaId);
+		long timbrado =Long.valueOf(nroTimbrado);
+		repository.saveTimbrado(venta, timbrado);
+		repository.flush();
+	}
+
+	public Long getNroTimbrado() {
+		return repository.getMaxNroTimbrado();
 	}
 }

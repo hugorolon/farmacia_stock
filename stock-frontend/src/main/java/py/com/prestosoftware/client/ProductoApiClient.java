@@ -88,6 +88,14 @@ public class ProductoApiClient {
         restTemplate.delete(apiUrl + "/" + id);
     }
 
+    public void activarLote(Long id) {
+        restTemplate.put(apiUrl + "/" + id + "/lote/activar", null);
+    }
+
+    public void inactivarLote(Long id) {
+        restTemplate.put(apiUrl + "/" + id + "/lote/inactivar", null);
+    }
+
     public java.util.Optional<ProductoDTO> findByFilter(String filter) { return findAll().stream().filter(x -> filter.equals(x.getDescripcion())).findFirst(); }
     public java.util.Optional<ProductoDTO> findByReferencia(String referencia) { return findAll().stream().filter(x -> referencia.equals(x.getReferencia())).findFirst(); }
     public ProductoDTO findProductByFilter(String filter) { return findByFilter(filter).orElse(null); }

@@ -1,12 +1,14 @@
 package py.com.prestosoftware.ui.controllers;
 
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 
-import jakarta.annotation.PostConstruct;
 import javax.swing.JTextField;
 import javax.swing.RowFilter;
 import javax.swing.event.ListSelectionEvent;
@@ -15,25 +17,13 @@ import javax.swing.table.TableRowSorter;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.client.RestClientResponseException;
-
-import py.com.prestosoftware.client.CategoriaApiClient;
-import py.com.prestosoftware.client.ColorApiClient;
-import py.com.prestosoftware.client.DepositoApiClient;
-import py.com.prestosoftware.client.GrupoApiClient;
-import py.com.prestosoftware.client.ImpuestoApiClient;
-import py.com.prestosoftware.client.ListaPrecioApiClient;
-import py.com.prestosoftware.client.MarcaApiClient;
-import py.com.prestosoftware.client.NcmApiClient;
-import py.com.prestosoftware.client.ProductoApiClient;
-import py.com.prestosoftware.client.SubgrupoApiClient;
-import py.com.prestosoftware.client.TamanhoApiClient;
-import py.com.prestosoftware.client.UnidadMedidaApiClient;
+import jakarta.annotation.PostConstruct;
 import py.com.prestosoftware.data.dtos.CategoriaDTO;
 import py.com.prestosoftware.data.dtos.ColorDTO;
 import py.com.prestosoftware.data.dtos.GrupoDTO;
 import py.com.prestosoftware.data.dtos.ImpuestoDTO;
 import py.com.prestosoftware.data.dtos.ListaPrecioDTO;
+import py.com.prestosoftware.data.dtos.LoteDTO;
 import py.com.prestosoftware.data.dtos.MarcaDTO;
 import py.com.prestosoftware.data.dtos.NcmDTO;
 import py.com.prestosoftware.data.dtos.ProductoDTO;
@@ -41,6 +31,19 @@ import py.com.prestosoftware.data.dtos.ProductoDeposito;
 import py.com.prestosoftware.data.dtos.SubgrupoDTO;
 import py.com.prestosoftware.data.dtos.TamanhoDTO;
 import py.com.prestosoftware.data.dtos.UnidadMedidaDTO;
+import py.com.prestosoftware.client.CategoriaApiClient;
+import py.com.prestosoftware.client.ColorApiClient;
+import py.com.prestosoftware.client.DepositoApiClient;
+import py.com.prestosoftware.client.GrupoApiClient;
+import py.com.prestosoftware.client.ImpuestoApiClient;
+import py.com.prestosoftware.client.ListaPrecioApiClient;
+import py.com.prestosoftware.client.LoteApiClient;
+import py.com.prestosoftware.client.MarcaApiClient;
+import py.com.prestosoftware.client.NcmApiClient;
+import py.com.prestosoftware.client.ProductoApiClient;
+import py.com.prestosoftware.client.SubgrupoApiClient;
+import py.com.prestosoftware.client.TamanhoApiClient;
+import py.com.prestosoftware.client.UnidadMedidaApiClient;
 import py.com.prestosoftware.domain.validations.ProductoValidator;
 import py.com.prestosoftware.domain.validations.ValidationError;
 import py.com.prestosoftware.ui.forms.ProductoPanel;
@@ -68,7 +71,7 @@ public class ProductoController extends AbstractFrameController {
     private ProductoValidator productValidator;
     private CategoriaApiClient categoriaService;
     private GrupoApiClient grupoService;
-    private SubgrupoApiClient subGrupoApiClient;
+    private SubgrupoApiClient subGrupoService;
     private NcmApiClient ncmService;
     private ImpuestoApiClient impuestoService;
     private DepositoApiClient depositoService;
@@ -77,6 +80,7 @@ public class ProductoController extends AbstractFrameController {
     private UnidadMedidaApiClient unidadMedidaService;
     private ColorApiClient colorService;
     private ListaPrecioApiClient listaPrecioService;
+    private LoteApiClient loteService;
    // private ProductoInterfaz interfaz;
     
     private ProductoPanel productoPanel;
@@ -100,11 +104,11 @@ public class ProductoController extends AbstractFrameController {
     @Autowired
     public ProductoController(ProductoPanel productFrame, ProductTableModel productTableModel, ProductoApiClient productService, 
     	ProductoValidator productValidator, CategoriaApiClient categoriaService, GrupoApiClient grupoService, ListaPrecioApiClient listaPrecioService,
-    	NcmApiClient ncmService, ImpuestoApiClient impuestoService, MarcaApiClient marcaService, TamanhoApiClient tamanhoService, SubgrupoApiClient subGrupoApiClient,
+    	NcmApiClient ncmService, ImpuestoApiClient impuestoService, MarcaApiClient marcaService, TamanhoApiClient tamanhoService, SubgrupoApiClient subGrupoService,
     	UnidadMedidaApiClient unidadMedidaService, ColorApiClient colorService, DepositoApiClient depositoService, CategoriaComboBoxModel categoriaComboBoxModel,
     	GrupoComboBoxModel grupoComboBoxModel, NcmComboBoxModel ncmComboBoxModel, ImpuestoComboBoxModel impuestoComboBoxModel,
     	MarcaComboBoxModel marcaComboBoxModel, TamanhoComboBoxModel tamanhoComboBoxModel, UnidadMedidaComboBoxModel unidadMedidaComboBoxModel, 
-    	ColorComboBoxModel colorComboBoxModel, ListaPrecioComboBoxModel listaComboBoxModel, SubgrupoComboBoxModel subgrupoComboBoxModel, ProductoDepositoTableModel depositoTableModel) {
+    	ColorComboBoxModel colorComboBoxModel, ListaPrecioComboBoxModel listaComboBoxModel, SubgrupoComboBoxModel subgrupoComboBoxModel, ProductoDepositoTableModel depositoTableModel, LoteApiClient loteService) {
         this.productoPanel = productFrame;  
         this.productTableModel = productTableModel;
         this.depositoTableModel=depositoTableModel;
@@ -119,7 +123,7 @@ public class ProductoController extends AbstractFrameController {
         this.unidadMedidaService = unidadMedidaService;
         this.colorService = colorService;
         this.listaPrecioService = listaPrecioService;
-        this.subGrupoApiClient = subGrupoApiClient;
+        this.subGrupoService = subGrupoService;
         this.depositoService = depositoService;
         this.categoriaComboBoxModel = categoriaComboBoxModel;
         this.grupoComboBoxModel = grupoComboBoxModel;
@@ -131,6 +135,7 @@ public class ProductoController extends AbstractFrameController {
         this.colorComboBoxModel = colorComboBoxModel;
         this.listaComboBoxModel = listaComboBoxModel;
         this.subgrupoComboBoxModel = subgrupoComboBoxModel;
+        this.loteService= loteService;
     }
 
     @PostConstruct
@@ -139,8 +144,32 @@ public class ProductoController extends AbstractFrameController {
         registerAction(productoPanel.getBtnCancelar(), (e) -> cleanInputs());
         registerAction(productoPanel.getBtnCerrar(), (e) -> closeWindow());
         registerAction(productoPanel.getBtnNuevo(), (e) -> cleanInputs());
-  
         registerAction(productoPanel.getBtnBuscador(), (e) -> findByName(productoPanel.getTfBuscador().getText()));
+     // Esto se ejecuta solo UNA vez al iniciar el controlador
+        ItemListener loteListener = e -> {
+        	if(productoPanel.isCargandoLote())
+        		return;
+            // Al usar un Lambda, evitamos el código repetitivo
+            String idText = productoPanel.getTfProductoId().getText();
+            if (idText.isEmpty()) return; // Seguridad
+
+            Long productoId = Long.valueOf(idText);
+
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                productService.activarLote(productoId);
+                productoPanel.cargaLote(true);
+            } else {
+                if (poseeLote(productoId)) {
+                    productoPanel.poseeLote();
+                    // Opcional: revertir el check si no se puede desactivar
+                } else {
+                    productService.inactivarLote(productoId);
+                    productoPanel.cargaLote(false);
+                }
+            }
+        };
+        
+        productoPanel.getChkLote().addItemListener(loteListener);
         
         registerSelectRow(productoPanel.getTbProducto().getSelectionModel(), (e) -> setData());
         
@@ -210,6 +239,14 @@ public class ProductoController extends AbstractFrameController {
 			}
 		});
     }
+    
+    private boolean poseeLote(Long pId) {
+		List<LoteDTO> lotes = loteService.findLotesByProductoId(pId);
+		if(lotes.size()>0)
+			return true;
+		else
+			return false;
+	}
 
     @Override
     public void prepareAndOpenFrame() {
@@ -253,7 +290,7 @@ public class ProductoController extends AbstractFrameController {
     }
     
     private void loadSubGrupos() {
-    	List<SubgrupoDTO> subgrupos = subGrupoApiClient.findAll();
+    	List<SubgrupoDTO> subgrupos = subGrupoService.findAll();
     	subgrupoComboBoxModel.clear();
         subgrupoComboBoxModel.addElements(subgrupos);
     }
@@ -342,10 +379,10 @@ public class ProductoController extends AbstractFrameController {
         tamanhoComboBoxModel.addElements(tamanhos);
     }
     
-//    public void addNewProduct() {
-//    	long id = productService.addNewProduct();
-//    	productoPanel.setNewProducto(id + 1);
-//    }
+    public void addNewProduct() {
+    	long id = productService.count();
+    	productoPanel.setNewProducto(id + 1);
+    }
     
     private void findByName(String name) {
     	try {
@@ -407,17 +444,21 @@ public class ProductoController extends AbstractFrameController {
             ValidationError validationError = errors.get();
             Notifications.showFormValidationAlert(validationError.getMessage());
         } else {
-        	try {
-        		product = productService.save(product);
-				Notifications.showAlert("Producto guardado con éxito!");
-        	} catch (RestClientResponseException ex) {
-        		String response = ex.getResponseBodyAsString();
-        		Notifications.showAlert("No se pudo guardar el producto. " +
-        				(response == null || response.trim().isEmpty()
-        						? ex.getStatusText()
-        						: response));
-        		return;
-        	}
+        	product = productService.save(product);
+        	List<LoteDTO> lotes= productoPanel.getLotesAgregados();
+        	List<LoteDTO> lotesRemovidos= productoPanel.getLotesEliminados();
+        	for (Iterator iteRemovido = lotesRemovidos.iterator(); iteRemovido.hasNext();) {
+				LoteDTO lotesRemovido = (LoteDTO) iteRemovido.next();
+				if(lotesRemovido.getId()!=null)
+					loteService.remove(lotesRemovido);
+			}
+        	
+        	for (Iterator iterator = lotes.iterator(); iterator.hasNext();) {
+				LoteDTO lotes2 = (LoteDTO) iterator.next();
+				lotes2.setIdProducto(product.getId());
+				//if(lotes2.getId()==null)
+				loteService.save(lotes2);
+			}
             if(origen.equalsIgnoreCase("MENU")) {
             	loadProducts();
             	
@@ -431,6 +472,8 @@ public class ProductoController extends AbstractFrameController {
         }
     }
 
+	
+	
     private void cleanInputs() {
     	try {
         	productoPanel.clearForm();

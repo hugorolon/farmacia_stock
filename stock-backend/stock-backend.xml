@@ -1,11 +1,11 @@
 <service>
-  <id>stock-backend</id>
-  <name>Backend</name>
+  <id>stock-backend-farmacia</id>
+  <name>Backend-farmacia</name>
   <description>Servicio de backend en Spring Boot</description>
   
   <!-- Ruta a Java y argumentos para ejecutar el JAR -->
   <executable>C:\Program Files\Java\jdk-21.0.12.1\bin\java.exe</executable>
-  <arguments>-jar "C:\unicosoft\stock-backend\target\stock-backend-0.1.jar"</arguments>
+  <arguments>-jar "C:\unicosoft-farmacia\stock-backend\target\stock-backend-0.1.jar"</arguments>
   
   <!-- Inicio automático con Windows -->
   <startmode>Automatic</startmode>
@@ -17,7 +17,7 @@
   <onfailure action="restart" delay="10 sec"/>
   
   <!-- Carpeta para guardar los logs -->
-  <logpath>C:\unicosoft\stock-backend\logs</logpath>
+  <logpath>C:\unicosoft-farmacia\stock-backend\logs</logpath>
   <log mode="roll-by-size">
     <sizeThreshold>10240</sizeThreshold>
     <keepFiles>5</keepFiles>

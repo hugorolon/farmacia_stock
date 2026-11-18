@@ -1,6 +1,8 @@
 package py.com.prestosoftware.domain.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,6 +51,10 @@ public class ProductoService {
     	return repository.findByReferencia(referencia);
     }
     
+    public Optional<Producto> findByCodigoBarra(String codigobarra) {
+    	return repository.findByProductByCodigo(Long.valueOf(codigobarra));
+    }
+    
     public Optional<Producto> findById(Long id) {
     	return repository.findById(id);
     }
@@ -69,7 +75,9 @@ public class ProductoService {
         return repository.findByDescripcionContaining(name);
     }
 
-    @Transactional
+//    public void save(Producto producto) {
+//        repository.save(producto);
+//    }
     public Producto save(Producto producto) {
         Producto p = repository.save(producto);
         return p;
@@ -85,9 +93,9 @@ public class ProductoService {
         repository.delete(producto);
     }
 
-//	public long addNewProduct() {
-//		return repository.getMaxId();
-//	}
+	public long addNewProduct() {
+		return repository.getMaxId();
+	}
 
 	@Transactional
 	public void updateStock(List<Producto> productos) {
@@ -99,6 +107,16 @@ public class ProductoService {
 	public void updateStock(Producto producto) {
 		repository.save(producto);
 		repository.flush();
+	}
+
+	@Transactional
+	public void inactivarLote(Long id) {
+		repository.inactivaLote(id);
+	}
+	
+	@Transactional
+	public void activarLote(Long id) {
+		repository.activaLote(id);
 	}
 	
 }

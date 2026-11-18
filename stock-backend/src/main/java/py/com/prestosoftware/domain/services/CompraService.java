@@ -1,7 +1,5 @@
 package py.com.prestosoftware.domain.services;
 
-import py.com.prestosoftware.ui.helpers.GlobalVars;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +28,7 @@ import py.com.prestosoftware.data.repository.MovimientoItemEgresoRepository;
 import py.com.prestosoftware.data.repository.MovimientoItemIngresoRepository;
 import py.com.prestosoftware.data.repository.ProcesoPagoComprasRepository;
 import py.com.prestosoftware.data.repository.ProductoRepository;
+import py.com.prestosoftware.ui.helpers.GlobalVars;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -103,14 +102,12 @@ public class CompraService {
     	if(compra.getId()==999999)
     		compra.setId(null);
     	c= repository.save(compra);
-		
-		System.out.println("CompraService.save: Compra guardada con ID: " + c.getId());
     	repository.flush();
     	if (lanzamientoCaja == 0) {
 			updateStockProduct(c.getItems(),lanzamientoCaja,1);
 			openMovCaja(c, condicion);
 			openMovimientoEgresoProcesoPagoCompras(c);
-			if (condicion.equalsIgnoreCase("30 dÃ­as")) {
+			if (condicion.equalsIgnoreCase("30 días")) {
 				CuentaAPagar cuentaAPagar = new CuentaAPagar();
 				cuentaAPagar = cuentaAPagarProcesoPagoCompras(c, condicion);
 				movimientoIngresoProcesoPagoCompras(c, cuentaAPagar);
@@ -120,6 +117,10 @@ public class CompraService {
     	return c;
     }
     
+    @Transactional(rollbackFor = RuntimeException.class)
+    public Compra save(Compra compra) {
+    	return repository.save(compra);
+    }
 
     public void remove(Compra compra) {
         repository.delete(compra);
@@ -231,7 +232,7 @@ public class CompraService {
 		if (condicion.equalsIgnoreCase("contado")) {
 			movCaja.setObs("Pagado al proveedor ");
 			movCaja.setSituacion("PAGADO");
-		} else if (condicion.equalsIgnoreCase("30 dÃ­as")) {
+		} else if (condicion.equalsIgnoreCase("30 días")) {
 			//cant = 1;// Integer.valueOf(tfCuotaCant.getText());
 			movCaja.setObs("Credito a cuotas :" + 1);
 			movCaja.setSituacion("PROCESADO");
@@ -293,7 +294,7 @@ public class CompraService {
 		int cant = 0;
 		int cantDias = 0;
 		Calendar cal = Calendar.getInstance();
-		if (condicion.equalsIgnoreCase("30 dÃ­as")) {
+		if (condicion.equalsIgnoreCase("30 días")) {
 			cant =1;// Integer.valueOf(tfCuotaCant.getText());
 			cantDias = 30;
 			//cal.add(Calendar.DAY_OF_MONTH, Integer.valueOf(30));
@@ -346,14 +347,14 @@ public class CompraService {
 		movItemEgreso.setMieEgreso(1);
 		double monto = (double) Math.round(c.getTotalGeneral() / 11);
 		movItemEgreso.setMieMonto(monto);
-		movItemEgreso.setMieDescripcion("Egreso  - Compra CrÃ©dito IVA");
+		movItemEgreso.setMieDescripcion("Egreso  - Compra Crédito IVA");
 		repositoryMovimientoItemEgreso.save(movItemEgreso);
 
 		MovimientoItemEgreso movIE = new MovimientoItemEgreso();
 		movIE.setMieNumero(movEgreso.getMegNumero());
 		movIE.setMieEgreso(4);
 		movIE.setMieMonto(c.getTotalGeneral() - monto);
-		movIE.setMieDescripcion("Egreso  - Compra CrÃ©dito IMPONIBLE");
+		movIE.setMieDescripcion("Egreso  - Compra Crédito IMPONIBLE");
 		repositoryMovimientoItemEgreso.save(movIE);
 
 		ProcesoPagoCompras ppc = new ProcesoPagoCompras();
