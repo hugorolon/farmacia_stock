@@ -1,0 +1,1 @@
+java -jar target/stock-backend-0.1.jar
