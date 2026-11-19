@@ -49,13 +49,16 @@ public class CompraService {
 	private ItemCuentaAPagarRepository repositoryItemCuentaAPagar;
 	private MovimientoEgresoRepository repositoryMovimientoEgreso;
 	private MovimientoItemEgresoRepository repositoryMovimientoItemEgreso;
+	private LoteService loteService;
 
 
     @Autowired
-    public CompraService(CompraRepository repository, ProductoRepository repositoryProducto, MovimientoCajaRepository repositoryPago, MovimientoIngresoRepository repositoryMovimientoIngreso, 
+    public CompraService(CompraRepository repository, ProductoRepository repositoryProducto, MovimientoCajaRepository repositoryPago, MovimientoIngresoRepository repositoryMovimientoIngreso,
 			MovimientoItemIngresoRepository repositoryMovimientoItemIngreso, ProcesoPagoComprasRepository repositoryProcesoPagoCompras,CuentaAPagarRepository repositoryCuentaAPagar,
-			ItemCuentaAPagarRepository repositoryItemCuentaAPagar, MovimientoEgresoRepository repositoryMovimientoEgreso, MovimientoItemEgresoRepository repositoryMovimientoItemEgreso) {
+			ItemCuentaAPagarRepository repositoryItemCuentaAPagar, MovimientoEgresoRepository repositoryMovimientoEgreso, MovimientoItemEgresoRepository repositoryMovimientoItemEgreso,
+			LoteService loteService) {
         this.repository = repository;
+        this.loteService = loteService;
         this.repositoryProducto =repositoryProducto;
 		this.repositoryPago=  repositoryPago;
 		this.repositoryMovimientoIngreso= repositoryMovimientoIngreso;
@@ -105,6 +108,9 @@ public class CompraService {
     	repository.flush();
     	if (lanzamientoCaja == 0) {
 			updateStockProduct(c.getItems(),lanzamientoCaja,1);
+			// Ingreso de lotes (productos con control de lote) + kardex de lotes
+			loteService.registrarEntradaCompra(c, c.getUsuario() != null ? c.getUsuario().getId() : GlobalVars.USER_ID);
+			repository.flush();
 			openMovCaja(c, condicion);
 			openMovimientoEgresoProcesoPagoCompras(c);
 			if (condicion.equalsIgnoreCase("30 días")) {

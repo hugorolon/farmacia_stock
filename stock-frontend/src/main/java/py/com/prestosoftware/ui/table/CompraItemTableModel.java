@@ -3,6 +3,7 @@ package py.com.prestosoftware.ui.table;
 import org.springframework.stereotype.Component;
 
 import py.com.prestosoftware.data.dtos.CompraDetalleDTO;
+import py.com.prestosoftware.ui.helpers.Fechas;
 import py.com.prestosoftware.ui.shared.DefaultTableModel;
 
 @Component
@@ -13,7 +14,7 @@ public class CompraItemTableModel extends DefaultTableModel<CompraDetalleDTO> {
 	@Override
     public String[] getColumnLabels() {
         return new String[] { "Codigo", "Cantidad", "Descripcion", "Precio Unit.", "Precio Total", 
-        		"Precio Fob", "Costo Cif", "Gasto"};
+        		"Precio Fob", "Costo Cif", "Gasto", "Lote", "Vence"};
     }
 
     @Override
@@ -37,6 +38,10 @@ public class CompraItemTableModel extends DefaultTableModel<CompraDetalleDTO> {
                 return item.getCostoCif();
             case 7:
                 return item.getGastos();
+            case 8:
+                return item.getCodigoLote() == null ? "" : item.getCodigoLote();
+            case 9:
+                return item.getFechaVencimiento() == null ? "" : Fechas.dateUtilAStringDDMMAAAA(item.getFechaVencimiento());
             default:
                 return "";
         }

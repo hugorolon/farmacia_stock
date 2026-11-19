@@ -157,14 +157,22 @@ public class ProductoController extends AbstractFrameController {
 
             if (e.getStateChange() == ItemEvent.SELECTED) {
                 productService.activarLote(productoId);
-                productoPanel.cargaLote(true);
+                actualizarEsLoteEnCache(productoId, 1);
+                productoPanel.mostrarLotes(true);
             } else {
                 if (poseeLote(productoId)) {
                     productoPanel.poseeLote();
-                    // Opcional: revertir el check si no se puede desactivar
+                    // no se puede desactivar: se vuelve a tildar sin disparar este listener
+                    productoPanel.setCargandoLote(true);
+                    try {
+                        productoPanel.getChkLote().setSelected(true);
+                    } finally {
+                        productoPanel.setCargandoLote(false);
+                    }
                 } else {
                     productService.inactivarLote(productoId);
-                    productoPanel.cargaLote(false);
+                    actualizarEsLoteEnCache(productoId, 0);
+                    productoPanel.mostrarLotes(false);
                 }
             }
         };
@@ -240,6 +248,16 @@ public class ProductoController extends AbstractFrameController {
 		});
     }
     
+    /** Mantiene la lista en memoria al dia, para que al volver a seleccionar el producto se vea el estado real. */
+    private void actualizarEsLoteEnCache(Long productoId, int esLote) {
+        if (productos == null)
+            return;
+        for (ProductoDTO p : productos) {
+            if (p != null && productoId.equals(p.getId()))
+                p.setEsLote(esLote);
+        }
+    }
+
     private boolean poseeLote(Long pId) {
 		List<LoteDTO> lotes = loteService.findLotesByProductoId(pId);
 		if(lotes.size()>0)

@@ -48,6 +48,7 @@ import py.com.prestosoftware.client.ConfiguracionApiClient;
 import py.com.prestosoftware.client.CuentaARecibirApiClient;
 import py.com.prestosoftware.client.DepositoApiClient;
 import py.com.prestosoftware.client.ItemCuentaARecibirApiClient;
+import py.com.prestosoftware.client.LoteApiClient;
 import py.com.prestosoftware.client.MovimientoCajaApiClient;
 import py.com.prestosoftware.client.MovimientoEgresoApiClient;
 import py.com.prestosoftware.client.MovimientoIngresoApiClient;
@@ -188,6 +189,9 @@ public class VentaPanel extends JFrame
 	private CuentaARecibirApiClient cuentaARecibirService;
 	private ItemCuentaARecibirApiClient itemCuentaARecibirApiClient;
 	private ProductoController productoController;
+	private LoteApiClient loteApiClient;
+	// el producto seleccionado controla lote: se vende solo de lotes vigentes (FEFO)
+	private boolean productoConLote = false;
 
 	private boolean isProductService;
 	private String nivelPrecio;
@@ -216,8 +220,9 @@ public class VentaPanel extends JFrame
 			MovimientoItemEgresoApiClient movimientoItemEgresoApiClient,
 			ProcesoCobroVentasApiClient procesoCobroVentasService, CuentaARecibirApiClient cuentaARecibirService,
 			ItemCuentaARecibirApiClient itemCuentaARecibirApiClient, ClienteAddPanel clienteAddPanel, 
-			ProductoController productoController) {
+			ProductoController productoController, LoteApiClient loteApiClient) {
 		this.itemTableModel = itemTableModel;
+		this.loteApiClient = loteApiClient;
 		this.clientDialog = clientDialog;
 		this.vendedorDialog = vendedorDialog;
 		this.depositoDialog = depositoDialog;
@@ -1517,7 +1522,46 @@ public class VentaPanel extends JFrame
 			break;
 		}
 
+		if (result && productoConLote) {
+			result = validarStockLotes(productoId, cantidad);
+		}
+
 		return result;
+	}
+
+	/**
+	 * Productos con control de lote: la venta solo puede salir de lotes NO vencidos.
+	 * Considera lo que ya esta cargado en la grilla para el mismo producto.
+	 */
+	private boolean validarStockLotes(Long productoId, Double cantidad) {
+		try {
+			Double disponible = loteApiClient.getStockDisponible(productoId);
+
+			// fila que se va a reemplazar (cuando no se permiten items duplicados)
+			int filaReemplazo = (conf != null && conf.getPermiteItemDuplicado() == 1) ? -1 : getDuplicateItemIndex();
+			double enGrilla = 0d;
+			List<VentaDetalleDTO> items = itemTableModel.getEntities();
+			for (int i = 0; i < items.size(); i++) {
+				VentaDetalleDTO it = items.get(i);
+				if (i != filaReemplazo && productoId.equals(it.getProductoId()) && it.getCantidad() != null)
+					enGrilla += it.getCantidad();
+			}
+
+			if (cantidad + enGrilla > disponible + 0.0001) {
+				Double vencido = loteApiClient.getStockVencido(productoId);
+				String msg = "Stock en lotes vigentes: " + FormatearValor.doubleAString(disponible)
+						+ (enGrilla > 0 ? " (ya cargado en la venta: " + FormatearValor.doubleAString(enGrilla) + ")" : "");
+				if (vencido != null && vencido > 0)
+					msg += "\nHay " + FormatearValor.doubleAString(vencido)
+							+ " unidad(es) en lotes VENCIDOS que no se pueden vender.";
+				Notifications.showAlert(msg);
+				return false;
+			}
+			return true;
+		} catch (Exception e) {
+			Notifications.showAlert("No se pudo verificar el stock por lote del producto: " + e.getMessage());
+			return false;
+		}
 	}
 
 	private void abandonarNota() {
@@ -1682,6 +1726,7 @@ public class VentaPanel extends JFrame
 		tfPrecioTotal.setText("");
 		tfStock.setText("");
 		lblCosto.setText("");
+		productoConLote = false;
 		tfProductoID.requestFocus();
 	}
 
@@ -2381,6 +2426,12 @@ public class VentaPanel extends JFrame
 						ventaSeleccionado.setSituacion("ANULADO");
 						VentaDTO v=ventaService.saveRemoved(lanzCaja, ventaSeleccionado, ventaSeleccionado.getItems(), tfCondicionPago.getSelectedItem().toString());
 						if(v!=null) {
+							// devuelve a sus lotes lo vendido por esta venta
+							try {
+								loteApiClient.revertir("VENTA", ventaSeleccionado.getId(), GlobalVars.USER_ID);
+							} catch (Exception ex) {
+								Notifications.showAlert("No se pudo revertir el stock de lotes de la venta: " + ex.getMessage());
+							}
 							newVenta();
 							Notifications.showAlert("Venta ELIMINADO con exito.!");
 						}
@@ -2852,6 +2903,7 @@ public class VentaPanel extends JFrame
 				this.precioC = producto.getPrecioVentaC();
 				this.impuesto = producto.getImpuesto().getPorcentaje().intValue();
 				this.precioCompra= producto.getPrecioCosto()==null?0:producto.getPrecioCosto();
+				this.productoConLote = producto.getEsLote() == 1;
 				// setProductoSeleccionado(producto);
 
 				tfProductoID.setText(String.valueOf(producto.getId()));

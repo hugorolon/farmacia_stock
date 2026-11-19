@@ -52,6 +52,7 @@ import py.com.prestosoftware.client.CondicionPagoApiClient;
 import py.com.prestosoftware.client.ConfiguracionApiClient;
 import py.com.prestosoftware.client.CuentaAPagarApiClient;
 import py.com.prestosoftware.client.ItemCuentaAPagarApiClient;
+import py.com.prestosoftware.client.LoteApiClient;
 import py.com.prestosoftware.client.MovimientoCajaApiClient;
 import py.com.prestosoftware.client.MovimientoEgresoApiClient;
 import py.com.prestosoftware.client.MovimientoIngresoApiClient;
@@ -169,7 +170,13 @@ public class CompraLocalPanel extends JFrame
 	private ProveedorDTO proveedorSeleccionado;
 	private CompraDTO compraSeleccionado;
 	private ProductoController productoController;
-	
+	private LoteApiClient loteApiClient;
+
+	// Control de lote: se habilita solo para productos con es_lote = 1
+	private JTextField tfCodigoLote;
+	private JFormattedTextField tfVenceLote;
+	private boolean productoConLote = false;
+
 	public CompraLocalPanel(CompraItemTableModel itemTableModel, ConsultaProveedor proveedorDialog,
 			ProveedorAddPanel proveedorAddPanel, CompraDialog compraDialog, ProductoVistaDialog productoDialog,
 			CompraApiClient compraService, ProveedorApiClient proveedorService, CompraValidator compraValidator, ProductoApiClient productoService,
@@ -181,8 +188,9 @@ public class CompraLocalPanel extends JFrame
 			ProcesoPagoComprasApiClient procesoPagoComprasService,
 			ProcesoPagoProveedoresApiClient procesoPagoProveedoresService, CuentaAPagarApiClient cuentaAPagarService,
 			ItemCuentaAPagarApiClient itemCuentaAPagarApiClient, 
-			ProductoController productoController) {
+			ProductoController productoController, LoteApiClient loteApiClient) {
 		this.itemTableModel = itemTableModel;
+		this.loteApiClient = loteApiClient;
 		this.proveedorDialog = proveedorDialog;
 		this.proveedorAddPanel = proveedorAddPanel;
 		this.productoDialog = productoDialog;
@@ -254,8 +262,74 @@ public class CompraLocalPanel extends JFrame
 		tfDescripcion.setEditable(false);
 		tfDescripcion.setFont(new Font("Tahoma", Font.PLAIN, 14));
 		tfDescripcion.setColumns(10);
-		tfDescripcion.setBounds(194, 30, 472, 30);
+		tfDescripcion.setBounds(194, 30, 262, 30);
 		pnlProducto.add(tfDescripcion);
+
+		// --- Control de lote (productos farmaceuticos con es_lote = 1) ---
+		JLabel lblLote = new JLabel("Nro. Lote");
+		lblLote.setFont(new Font("Tahoma", Font.PLAIN, 14));
+		lblLote.setBounds(460, 6, 100, 18);
+		pnlProducto.add(lblLote);
+
+		tfCodigoLote = new JTextField();
+		tfCodigoLote.setFont(new Font("Tahoma", Font.PLAIN, 14));
+		tfCodigoLote.setToolTipText("Numero de lote del laboratorio (obligatorio si el producto controla lote)");
+		tfCodigoLote.setEnabled(false);
+		tfCodigoLote.setBounds(460, 30, 100, 30);
+		((AbstractDocument) tfCodigoLote.getDocument()).setDocumentFilter(new UppercaseDocumentFilter());
+		tfCodigoLote.addFocusListener(new FocusAdapter() {
+			@Override
+			public void focusGained(FocusEvent e) {
+				tfCodigoLote.selectAll();
+			}
+		});
+		tfCodigoLote.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyPressed(KeyEvent e) {
+				if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+					if (!tfCodigoLote.getText().trim().isEmpty()) {
+						tfVenceLote.requestFocus();
+					} else {
+						Notifications.showAlert("Debes digitar el numero de lote.!");
+					}
+				} else if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+					tfCantidad.requestFocus();
+				}
+			}
+		});
+		pnlProducto.add(tfCodigoLote);
+
+		JLabel lblVenceLote = new JLabel("Vencimiento");
+		lblVenceLote.setFont(new Font("Tahoma", Font.PLAIN, 14));
+		lblVenceLote.setBounds(564, 6, 100, 18);
+		pnlProducto.add(lblVenceLote);
+
+		tfVenceLote = new JFormattedTextField(crearFormatoFecha());
+		tfVenceLote.setFont(new Font("Tahoma", Font.PLAIN, 14));
+		tfVenceLote.setToolTipText("Fecha de vencimiento del lote (dd/mm/aaaa)");
+		tfVenceLote.setEnabled(false);
+		tfVenceLote.setBounds(564, 30, 99, 30);
+		tfVenceLote.addFocusListener(new FocusAdapter() {
+			@Override
+			public void focusGained(FocusEvent e) {
+				tfVenceLote.selectAll();
+			}
+		});
+		tfVenceLote.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyPressed(KeyEvent e) {
+				if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+					if (parseFechaVencimiento(tfVenceLote.getText()) != null) {
+						tfPrecio.requestFocus();
+					} else {
+						Notifications.showAlert("Fecha de vencimiento invalida (dd/mm/aaaa).!");
+					}
+				} else if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+					tfCodigoLote.requestFocus();
+				}
+			}
+		});
+		pnlProducto.add(tfVenceLote);
 
 		tfPrecioTotal = new JTextField();
 		tfPrecioTotal.setHorizontalAlignment(SwingConstants.RIGHT);
@@ -398,7 +472,7 @@ public class CompraLocalPanel extends JFrame
 		tbProductos.getColumnModel().getColumn(1).setPreferredWidth(85);
 		tbProductos.getColumnModel().getColumn(1).setCellRenderer(alignRendererLeft);
 		tbProductos.getColumnModel().getColumn(2).setHeaderRenderer(alignRendererHeaderLeft);
-		tbProductos.getColumnModel().getColumn(2).setPreferredWidth(595);
+		tbProductos.getColumnModel().getColumn(2).setPreferredWidth(395);
 		tbProductos.getColumnModel().getColumn(2).setCellRenderer(alignRendererLeft);
 		tbProductos.getColumnModel().getColumn(3).setHeaderRenderer(alignRendererHeaderCenter);
 		tbProductos.getColumnModel().getColumn(3).setPreferredWidth(100);
@@ -406,6 +480,12 @@ public class CompraLocalPanel extends JFrame
 		tbProductos.getColumnModel().getColumn(4).setHeaderRenderer(alignRendererHeaderCenter);
 		tbProductos.getColumnModel().getColumn(4).setPreferredWidth(115);
 		tbProductos.getColumnModel().getColumn(4).setCellRenderer(alignRendererRight);
+		tbProductos.getColumnModel().getColumn(8).setHeaderRenderer(alignRendererHeaderCenter);
+		tbProductos.getColumnModel().getColumn(8).setPreferredWidth(100);
+		tbProductos.getColumnModel().getColumn(8).setCellRenderer(alignRendererLeft);
+		tbProductos.getColumnModel().getColumn(9).setHeaderRenderer(alignRendererHeaderCenter);
+		tbProductos.getColumnModel().getColumn(9).setPreferredWidth(100);
+		tbProductos.getColumnModel().getColumn(9).setCellRenderer(alignRendererLeft);
 		tbProductos.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
@@ -442,14 +522,20 @@ public class CompraLocalPanel extends JFrame
 			public void keyPressed(KeyEvent e) {
 				if (e.getKeyCode() == KeyEvent.VK_ENTER) {
 					if (!tfCantidad.getText().isEmpty()) {
-						tfPrecio.requestFocus();
+						if (productoConLote)
+							tfCodigoLote.requestFocus();
+						else
+							tfPrecio.requestFocus();
 					} else {
 						Notifications.showAlert("Debes digitar cantidad.!");
 					}
 				} else if (e.getKeyCode() == KeyEvent.VK_LEFT) {
 					tfProductoID.requestFocus();
 				} else if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
-					tfPrecio.requestFocus();
+					if (productoConLote)
+						tfCodigoLote.requestFocus();
+					else
+						tfPrecio.requestFocus();
 				}
 			}
 
@@ -1029,6 +1115,76 @@ public class CompraLocalPanel extends JFrame
 		return formatoFecha;
 	}
 
+	/** MaskFormatter propio (un MaskFormatter no se puede compartir entre dos campos). */
+	private MaskFormatter crearFormatoFecha() {
+		try {
+			MaskFormatter mf = new MaskFormatter("##/##/####");
+			mf.setPlaceholderCharacter('_');
+			return mf;
+		} catch (ParseException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	/** Parseo estricto dd/MM/yyyy; devuelve null si la fecha es incompleta o invalida. */
+	private Date parseFechaVencimiento(String texto) {
+		if (texto == null || texto.contains("_") || texto.trim().length() != 10)
+			return null;
+		java.text.SimpleDateFormat formato = new java.text.SimpleDateFormat("dd/MM/yyyy");
+		formato.setLenient(false);
+		try {
+			return formato.parse(texto.trim());
+		} catch (ParseException e) {
+			return null;
+		}
+	}
+
+	/** Habilita o deshabilita los campos de lote segun el producto seleccionado. */
+	private void habilitarLote(boolean habilitar) {
+		productoConLote = habilitar;
+		tfCodigoLote.setEnabled(habilitar);
+		tfVenceLote.setEnabled(habilitar);
+		if (!habilitar) {
+			tfCodigoLote.setText("");
+			tfVenceLote.setValue(null);
+			tfVenceLote.setText("");
+		}
+	}
+
+	/** Valida nro. de lote y vencimiento para productos con control de lote. */
+	private boolean isValidLote() {
+		if (!productoConLote)
+			return true;
+		if (tfCodigoLote.getText().trim().isEmpty()) {
+			Notifications.showAlert("Este producto controla lote. Debes digitar el numero de lote.!");
+			tfCodigoLote.requestFocus();
+			return false;
+		}
+		Date vence = parseFechaVencimiento(tfVenceLote.getText());
+		if (vence == null) {
+			Notifications.showAlert("Este producto controla lote. Debes digitar una fecha de vencimiento valida (dd/mm/aaaa).!");
+			tfVenceLote.requestFocus();
+			return false;
+		}
+		Calendar hoy = Calendar.getInstance();
+		hoy.set(Calendar.HOUR_OF_DAY, 0);
+		hoy.set(Calendar.MINUTE, 0);
+		hoy.set(Calendar.SECOND, 0);
+		hoy.set(Calendar.MILLISECOND, 0);
+		if (vence.before(hoy.getTime())) {
+			Integer respuesta = JOptionPane.showConfirmDialog(this,
+					"El lote " + tfCodigoLote.getText().trim() + " ya esta VENCIDO (" + tfVenceLote.getText()
+							+ "). Desea registrarlo igualmente?",
+					"AVISO - LOTE VENCIDO", JOptionPane.YES_NO_OPTION);
+			if (respuesta != JOptionPane.YES_OPTION) {
+				tfVenceLote.requestFocus();
+				return false;
+			}
+		}
+		return true;
+	}
+
 	private void getSelectedItem() {
 		try {
 			int selectedRow = tbProductos.getSelectedRow();
@@ -1041,7 +1197,14 @@ public class CompraLocalPanel extends JFrame
 				tfDescripcion.setText(String.valueOf(item.getProducto()));
 				tfPrecio.setText(FormatearValor.doubleAString(item.getPrecio()));
 				tfPrecioTotal.setText(FormatearValor.doubleAString(item.getSubtotal()));
-			}	
+				boolean conLote = item.getCodigoLote() != null && !item.getCodigoLote().isEmpty();
+				habilitarLote(conLote);
+				if (conLote) {
+					tfCodigoLote.setText(item.getCodigoLote());
+					if (item.getFechaVencimiento() != null)
+						tfVenceLote.setText(Fechas.dateUtilAStringDDMMAAAA(item.getFechaVencimiento()));
+				}
+			}
 		} catch (Exception e) {
 			// TODO: handle exception
 		}
@@ -1309,6 +1472,12 @@ public class CompraLocalPanel extends JFrame
 				updateStockProductRemoved(compraSeleccionado.getItems());
 				compraSeleccionado.setSituacion("ANULADO");
 				compraService.save(compraSeleccionado);
+				// devuelve el stock de los lotes ingresados por esta compra
+				try {
+					loteApiClient.revertir("COMPRA", compraSeleccionado.getId(), GlobalVars.USER_ID);
+				} catch (Exception ex) {
+					Notifications.showAlert("La compra fue anulada pero no se pudo revertir el stock de lotes: " + ex.getMessage());
+				}
 
 				if (conf != null && conf.getHabilitaLanzamientoCaja() == 0) {
 					removeMovCaja(compraSeleccionado);
@@ -1527,6 +1696,10 @@ public class CompraLocalPanel extends JFrame
 		item.setSubtotal(FormatearValor.stringToDoubleFormat(tfPrecioTotal.getText()));
 		item.setFecha(new Date());
 		item.setPrecioFob(FormatearValor.stringToDouble(tfPrecio.getText()));
+		if (productoConLote) {
+			item.setCodigoLote(tfCodigoLote.getText().trim().toUpperCase());
+			item.setFechaVencimiento(parseFechaVencimiento(tfVenceLote.getText()));
+		}
 
 		return item;
 	}
@@ -1537,6 +1710,7 @@ public class CompraLocalPanel extends JFrame
 		tfCantidad.setText("");
 		tfPrecio.setText("");
 		tfPrecioTotal.setText("");
+		habilitarLote(false);
 		// tfGasto.setText("");
 
 		tfProductoID.requestFocus();
@@ -1744,13 +1918,19 @@ public class CompraLocalPanel extends JFrame
 	}
 
 	private void addItem() {
+		if (!isValidLote())
+			return;
+
 		Boolean esDuplicado = false;
 		Integer fila = -1;
+		String loteActual = productoConLote ? tfCodigoLote.getText().trim().toUpperCase() : "";
 
 		for (Integer i = 0; i < tbProductos.getRowCount(); i++) {
 			String itemId = String.valueOf(tbProductos.getValueAt(i, 0));
+			// un mismo producto puede ingresar en varios lotes: es duplicado solo si coincide el lote
+			String loteFila = String.valueOf(itemTableModel.getValueAt(i, 8));
 
-			if (tfProductoID.getText().trim().equals(itemId) && !itemId.equals("")) {
+			if (tfProductoID.getText().trim().equals(itemId) && !itemId.equals("") && loteActual.equals(loteFila)) {
 				esDuplicado = true;
 				fila = i;
 			}
@@ -1860,6 +2040,7 @@ public class CompraLocalPanel extends JFrame
 			Notifications.showAlert("Este Producto es de tipo Servicio. No se puede comprar");
 		} else {
 			Double costo = producto.getPrecioCosto() != null ? producto.getPrecioCosto() : 0;
+			habilitarLote(producto.getEsLote() == 1);
 			tfProductoID.setText(producto.getId().toString());
 			tfDescripcion.setText(producto.getDescripcion());
 			tfPrecio.setText(FormatearValor.doubleAString(costo));

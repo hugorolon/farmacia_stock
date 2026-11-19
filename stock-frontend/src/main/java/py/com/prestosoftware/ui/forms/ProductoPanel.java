@@ -645,6 +645,30 @@ public class ProductoPanel extends JDialog implements MarcaInterfaz {
 		JLabel lbl_Nro_lote = new JLabel("Nro. Lote"); //$NON-NLS-1$ //$NON-NLS-2$
 		lbl_Nro_lote.setBounds(168, 9, 86, 14);
 		pnlLotes.add(lbl_Nro_lote);
+
+		// Stock inicial del lote (carga de inventario existente). Una vez que el lote
+		// tiene compras/ventas, el stock solo lo modifican esos movimientos.
+		JLabel lblStockLote = new JLabel("Stock inicial"); //$NON-NLS-1$
+		lblStockLote.setBounds(270, 9, 90, 14);
+		pnlLotes.add(lblStockLote);
+
+		tfStockLote = new JTextField();
+		tfStockLote.setBounds(270, 32, 80, 20);
+		tfStockLote.setHorizontalAlignment(SwingConstants.RIGHT);
+		tfStockLote.setToolTipText("Stock inicial del lote. No se modifica si el lote ya tiene compras/ventas.");
+		tfStockLote.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyTyped(KeyEvent e) {
+				Util.validateNumero(e);
+			}
+
+			@Override
+			public void keyPressed(KeyEvent e) {
+				if (e.getKeyCode() == KeyEvent.VK_ENTER)
+					btnAddLotes.requestFocus();
+			}
+		});
+		pnlLotes.add(tfStockLote);
 		
 		JButton btn_Remove_Lotes = new JButton("-"); //$NON-NLS-1$ //$NON-NLS-2$
 		btn_Remove_Lotes.setFont(new Font("Dialog", Font.BOLD, 18));
@@ -884,7 +908,29 @@ public class ProductoPanel extends JDialog implements MarcaInterfaz {
 			loteSeleccionado = selectedRow;
 			txt_nro_lote.setText(itemLoteSeleccionado.getCodigoLote());
 			tfVencimiento.setText(Fechas.dateUtilAStringDDMMAAAA(itemLoteSeleccionado.getFechaVencimiento()));
+			Double stock = itemLoteSeleccionado.getStockActual();
+			tfStockLote.setText(stock == null ? "0" : FormatearValor.doubleAString(stock));
 		}
+	}
+
+	private Double getStockLoteIngresado() {
+		String texto = tfStockLote.getText() == null ? "" : tfStockLote.getText().trim();
+		if (texto.isEmpty())
+			return 0d;
+		try {
+			return FormatearValor.stringToDoubleFormat(texto);
+		} catch (Exception e) {
+			return 0d;
+		}
+	}
+
+	private void limpiarCamposLote() {
+		tfVencimiento.setText(null);
+		txt_nro_lote.setText(null);
+		tfStockLote.setText(null);
+		itemLoteSeleccionado = null;
+		loteSeleccionado = -1;
+		tbLotes.clearSelection();
 	}
 	
 	public List<LoteDTO> getLotes() {
@@ -907,18 +953,22 @@ public class ProductoPanel extends JDialog implements MarcaInterfaz {
 	private void addItem() {
 		try {
 			if (isValidItem()) {
-				Date fv= Fechas.stringDDMMAAAAADateUtil(tfVencimiento.getText());
-				if(itemLoteSeleccionado.getFechaVencimiento().compareTo(fv)!=0)
+				boolean editando = itemLoteSeleccionado != null && loteSeleccionado >= 0
+						&& loteSeleccionado < itemTableModel.getRowCount()
+						&& itemTableModel.getEntityByRow(loteSeleccionado) == itemLoteSeleccionado;
+				if (!editando)
 					itemTableModel.addEntity(getItem());
 				else {
+					// edicion del lote seleccionado
 					itemTableModel.removeRow(loteSeleccionado);
-					itemLoteSeleccionado.setCodigoLote(txt_nro_lote.getText());
+					itemLoteSeleccionado.setCodigoLote(txt_nro_lote.getText().trim().toUpperCase());
+					itemLoteSeleccionado.setFechaVencimiento(Fechas.stringDDMMAAAAADateUtil(tfVencimiento.getText()));
+					itemLoteSeleccionado.setStockActual(getStockLoteIngresado());
 					itemTableModel.addEntity(itemLoteSeleccionado);
 				}
+				limpiarCamposLote();
 				tfVencimiento.requestFocus();
 			}
-			tfVencimiento.setText(null);
-			txt_nro_lote.setText(null);
 			// clearItem();
 		} catch (Exception e) {
 			Notifications.showAlert("Problemas para agregar items!");
@@ -932,10 +982,14 @@ public class ProductoPanel extends JDialog implements MarcaInterfaz {
 			int selectedRow = tbLotes.getSelectedRow();
 
 			if (selectedRow != -1) {
-				lotesEliminados.add(itemTableModel.getEntityByRow(selectedRow));
+				LoteDTO lote = itemTableModel.getEntityByRow(selectedRow);
+				if (lote.getStockActual() != null && lote.getStockActual() > 0) {
+					Notifications.showAlert("No se puede quitar un lote con stock (" + FormatearValor.doubleAString(lote.getStockActual()) + ")");
+					return;
+				}
+				lotesEliminados.add(lote);
 				itemTableModel.removeRow(selectedRow);
-				txt_nro_lote.setText(null);
-				tfVencimiento.setText(null);
+				limpiarCamposLote();
 			} else {
 				Notifications.showAlert("Debe seleccionar un Item para quitar de la lista");
 			}
@@ -949,17 +1003,28 @@ public class ProductoPanel extends JDialog implements MarcaInterfaz {
 			Notifications.showAlert("Digite el codigo del Producto");
 			tfProductoId.requestFocus();
 			return false;
-		} else if (tfVencimiento.getText().isEmpty()) {
+		} else if (tfVencimiento.getText().isEmpty() || tfVencimiento.getText().contains("_")
+				|| Fechas.stringDDMMAAAAADateUtil(tfVencimiento.getText()) == null) {
 			Notifications.showAlert("Seleccione la fecha de vencimiento");
 			tfVencimiento.requestFocus();
 			return false;
-		} 
-		
+		} else if (txt_nro_lote.getText() == null || txt_nro_lote.getText().trim().isEmpty()) {
+			Notifications.showAlert("Digite el numero de lote");
+			txt_nro_lote.requestFocus();
+			return false;
+		} else if (txt_nro_lote.getText().trim().length() > 30) {
+			Notifications.showAlert("El numero de lote no puede superar 30 caracteres");
+			txt_nro_lote.requestFocus();
+			return false;
+		}
+
+		String nroLote = txt_nro_lote.getText().trim();
 		for (LoteDTO item : itemTableModel.getEntities()) {
-			Date fv = Fechas.stringDDMMAAAAADateUtil(tfVencimiento.getText());
-			
-			if(item.getId()== null && item.getFechaVencimiento().compareTo(fv)==0 || txt_nro_lote.getText().equalsIgnoreCase(item.getCodigoLote())) {
-				Notifications.showAlert("La fecha de vencimiento o nro lote ya existe");
+			if (item == itemLoteSeleccionado)
+				continue; // es el mismo lote que se esta editando
+			String codigo = item.getCodigoLote() == null ? "" : item.getCodigoLote().trim();
+			if (nroLote.equalsIgnoreCase(codigo)) {
+				Notifications.showAlert("El nro de lote ya existe para este producto");
 				return false;
 			}
 		}
@@ -971,23 +1036,54 @@ public class ProductoPanel extends JDialog implements MarcaInterfaz {
 		LoteDTO item = new LoteDTO();
 		item.setIdProducto(Long.valueOf(tfProductoId.getText()));
 		item.setFechaVencimiento(Fechas.stringDDMMAAAAADateUtil(tfVencimiento.getText()));
-		item.setCodigoLote(txt_nro_lote.getText());
-		item.setStockActual(0d);
+		item.setCodigoLote(txt_nro_lote.getText().trim().toUpperCase());
+		item.setStockActual(getStockLoteIngresado());
 		item.setPrecioCompra(0d);
-		item.setCantidadInicial(0d);
+		item.setCantidadInicial(getStockLoteIngresado());
 
 		return item;
 	}
 	
 	public void cargaLote(boolean valor) {
+		// La visibilidad de cada pestania la maneja el JTabbedPane: no llamar a
+		// pnlLotes.setVisible(...), porque se pinta encima de la pestania seleccionada.
+		int seleccionada = tabbedPane.getSelectedIndex();
+		java.awt.Component actual = seleccionada >= 0 ? tabbedPane.getComponentAt(seleccionada) : null;
 		if (valor) {
 			tabbedPane.remove(pnlInfo);
 			tabbedPane.addTab("Lotes", pnlLotes);
 			tabbedPane.addTab("Info", pnlInfo);
-			// pnlLotes.setVisible(true);
 		} else {
 			tabbedPane.remove(pnlLotes);
-			// pnlLotes.setVisible(false);
+		}
+		// conservar la pestania que el usuario estaba viendo (si sigue existiendo)
+		int idx = actual != null ? tabbedPane.indexOfComponent(actual) : -1;
+		tabbedPane.setSelectedIndex(idx >= 0 ? idx : 0);
+		tabbedPane.revalidate();
+		tabbedPane.repaint();
+	}
+
+	/** Vacia la grilla de lotes y el estado de edicion (al cambiar de producto o limpiar). */
+	public void limpiarLotes() {
+		itemTableModel.clear();
+		lotesEliminados = new ArrayList<LoteDTO>();
+		limpiarCamposLote();
+	}
+
+	/**
+	 * Muestra (o quita) la pestania de lotes y carga SIEMPRE los lotes del producto
+	 * que esta en pantalla; nunca deja los del producto anterior.
+	 */
+	public void mostrarLotes(boolean conLote) {
+		limpiarLotes();
+		chkLote.setSelected(conLote);
+		cargaLote(conLote);
+		if (conLote && !tfProductoId.getText().trim().isEmpty()) {
+			try {
+				getLotes();
+			} catch (Exception e) {
+				Notifications.showAlert("No se pudieron cargar los lotes del producto: " + e.getMessage());
+			}
 		}
 	}
 	
@@ -1025,6 +1121,7 @@ public class ProductoPanel extends JDialog implements MarcaInterfaz {
 	
 	private MaskFormatter formatoFecha;
 	private JTextField txt_nro_lote;
+	private JTextField tfStockLote;
 
 	private MaskFormatter getFormatoFecha() {
 		try {
@@ -1040,9 +1137,19 @@ public class ProductoPanel extends JDialog implements MarcaInterfaz {
 	}
 
 	public void setProductForm(ProductoDTO product) {
+		if (product == null)
+			return;
+		this.isCargandoLote = true;
+		try {
+			tfProductoId.setText(product.getId() + "");
+			// los lotes se cargan primero y aparte: un error en otro campo no debe dejar
+			// en la grilla los lotes del producto seleccionado anteriormente
+			mostrarLotes(product.getEsLote() == 1);
+		} finally {
+			isCargandoLote = false;
+		}
 		try {
 			this.isCargandoLote= true;
-			tfProductoId.setText(product.getId() + "");
 			// tfNombre.setText(product.getNombre());
 			tfDescripcion.setText(product.getDescripcion() == null ? "" : product.getDescripcion());
 //			tfReferencia.setText(product.getReferencia());
@@ -1080,21 +1187,6 @@ public class ProductoPanel extends JDialog implements MarcaInterfaz {
 
 			// chEsPromo.setSelected(product.getEsPromo() == 1 ? true : false);
 			chServicio.setSelected(product.getEsServicio() == 1 ? true : false);
-			chkLote.setSelected(product.getEsLote() == 1 ? true : false);
-			if (product.getEsLote()==1) {
-				tabbedPane.remove(pnlInfo);
-	        	tabbedPane.addTab("Lotes", pnlLotes);
-	        	tabbedPane.addTab("Info", pnlInfo);
-			}else {
-				tabbedPane.remove(pnlLotes);
-			}
-				
-			pnlLotes.setVisible(false);
-			if(chkLote.isSelected()) {
-				getLotes();
-				pnlLotes.setVisible(true);
-			}
-				
 			tfDesFiscal.setText(product.getDescripcionFiscal());
 
 			chActivo.setSelected(product.getActivo() == 1 ? true : false);
@@ -1197,7 +1289,15 @@ public class ProductoPanel extends JDialog implements MarcaInterfaz {
 		imagenUrl = null;
 		// chEsProm
 		chActivo.setSelected(true);
-		chkLote.setSelected(false);
+		boolean cargando = isCargandoLote;
+		isCargandoLote = true; // limpiar el form no debe activar/inactivar lote en la base
+		try {
+			chkLote.setSelected(false);
+			limpiarLotes();
+			cargaLote(false);
+		} finally {
+			isCargandoLote = cargando;
+		}
 
 		tfPrecioA.setText("");
 		tfPrecioB.setText("");

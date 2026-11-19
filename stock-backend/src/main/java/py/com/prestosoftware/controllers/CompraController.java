@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.format.annotation.DateTimeFormat;
 
-import py.com.prestosoftware.data.models.CobroCliente;
 import py.com.prestosoftware.data.models.Compra;
 import py.com.prestosoftware.data.repository.CompraRepository;
 import py.com.prestosoftware.domain.services.CompraService;
@@ -40,7 +39,7 @@ public class CompraController {
 
     @GetMapping
     public List<Compra> findAll() {
-        return repository.findAll();
+        return service.findAll();
     }
 
     @GetMapping("/filtro")
@@ -60,7 +59,7 @@ public class CompraController {
 
     @GetMapping("/count")
     public long count() {
-        return repository.count();
+        return service.getRowCount();
     }
 
     @PostMapping
@@ -75,7 +74,12 @@ public class CompraController {
         Compra entity = objectMapper.convertValue(request.get("compra"), Compra.class);
         System.out.println("CompraController.save: LanzamientoCaja: " + lanzamientoCaja + ", Condicion: " + condicion + ", Compra: " + entity);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.save(lanzamientoCaja, entity, condicion));
+        try {
+            return ResponseEntity.status(HttpStatus.CREATED).body(service.save(lanzamientoCaja, entity, condicion));
+        } catch (IllegalArgumentException e) {
+            // p. ej. producto con control de lote sin nro. de lote / vencimiento
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
     }
 
     @PutMapping("/{id}")

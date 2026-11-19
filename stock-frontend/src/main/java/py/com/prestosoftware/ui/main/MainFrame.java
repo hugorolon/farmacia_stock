@@ -94,6 +94,7 @@ public class MainFrame extends JFrame {
 	private JMenu mnuRelatorios;
 	private JMenu mnuInfDatosProductos;
 	private JMenuItem mnuInfStockPorDeposito;
+	private JMenuItem mnuInfLotesVencimientos;
 	private JMenu mnuMovCuentaAPagarRecibir;
 	private JMenu mnuMovCuentaAPagar;
 	private JMenu mnuMovCuentaARecibir;
@@ -445,6 +446,9 @@ public class MainFrame extends JFrame {
 		mnuInfStockPorDeposito.setFont(new Font("Segoe UI", Font.PLAIN, 14));
 		mnuInfProductos.add(mnuInfDatosProductos);
 		mnuInfDatosProductos.add(mnuInfStockPorDeposito);
+		mnuInfLotesVencimientos = new JMenuItem("INFORME DE LOTES Y VENCIMIENTOS");
+		mnuInfLotesVencimientos.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+		mnuInfDatosProductos.add(mnuInfLotesVencimientos);
 		
 		mnuInfCuentaAPagarRecibir = new JMenu("CUENTAS A PAGAR Y RECIBIR");
 		mnuInfCuentaAPagarRecibir.setFont(new Font("Segoe UI", Font.PLAIN, 14));
@@ -984,6 +988,10 @@ public class MainFrame extends JFrame {
 
 	public JMenuItem getMnuInfStockPorDeposito() {
 		return mnuInfStockPorDeposito;
+	}
+
+	public JMenuItem getMnuInfLotesVencimientos() {
+		return mnuInfLotesVencimientos;
 	}
 
 	public void setMnuInfStockPorDeposito(JMenuItem mnuInfStockPorDeposito) {

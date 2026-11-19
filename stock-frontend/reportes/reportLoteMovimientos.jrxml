@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="reportLoteMovimientos" pageWidth="595" pageHeight="842" columnWidth="570" leftMargin="15" rightMargin="10" topMargin="10" bottomMargin="10" whenNoDataType="NoDataSection" uuid="7c1d8e2f-2a8b-4b63-8b1f-7c2a3b8d5e01">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="DAPostgres"/>
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<import value="net.sf.jasperreports.engine.*"/>
+	<import value="java.util.*"/>
+	<parameter name="titulo" class="java.lang.String"/>
+	<parameter name="subtitulo" class="java.lang.String"/>
+	<parameter name="empresa" class="java.lang.String"/>
+	<parameter name="sql" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[$P!{sql}]]>
+	</queryString>
+	<field name="lote_id" class="java.lang.Long"/>
+	<field name="producto_id" class="java.lang.Long"/>
+	<field name="producto" class="java.lang.String"/>
+	<field name="codigo_lote" class="java.lang.String"/>
+	<field name="fecha_vencimiento" class="java.util.Date"/>
+	<field name="stock_actual" class="java.lang.Double"/>
+	<field name="fecha" class="java.sql.Timestamp"/>
+	<field name="tipo" class="java.lang.String"/>
+	<field name="referencia" class="java.lang.Long"/>
+	<field name="tercero" class="java.lang.String"/>
+	<field name="entrada" class="java.lang.Double"/>
+	<field name="salida" class="java.lang.Double"/>
+	<variable name="entradaLote" class="java.lang.Double" resetType="Group" resetGroup="Lote" calculation="Sum">
+		<variableExpression><![CDATA[$F{entrada}]]></variableExpression>
+	</variable>
+	<variable name="salidaLote" class="java.lang.Double" resetType="Group" resetGroup="Lote" calculation="Sum">
+		<variableExpression><![CDATA[$F{salida}]]></variableExpression>
+	</variable>
+	<group name="Lote">
+		<groupExpression><![CDATA[$F{lote_id}]]></groupExpression>
+		<groupHeader>
+			<band height="36">
+				<rectangle>
+					<reportElement x="0" y="2" width="570" height="18" backcolor="#E1FBEA" uuid="7c1d8e2f-2a8b-4b63-8b1f-7c2a3b8d5e02"/>
+					<graphicElement>
+						<pen lineWidth="0.5"/>
+					</graphicElement>
+				</rectangle>
+				<textField>
+					<reportElement x="4" y="2" width="300" height="18" uuid="7c1d8e2f-2a8b-4b63-8b1f-7c2a3b8d5e03"/>
+					<textElement verticalAlignment="Middle">
+						<font size="9" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{producto_id} + " - " + $F{producto}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="304" y="2" width="130" height="18" uuid="7c1d8e2f-2a8b-4b63-8b1f-7c2a3b8d5e04"/>
+					<textElement verticalAlignment="Middle">
+						<font size="9" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA["Lote: " + ($F{codigo_lote} == null ? "" : $F{codigo_lote})]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="434" y="2" width="134" height="18" uuid="7c1d8e2f-2a8b-4b63-8b1f-7c2a3b8d5e05"/>
+					<textElement textAlignment="Right" verticalAlignment="Middle">
+						<font size="9" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA["Vence: " + ($F{fecha_vencimiento} == null ? "" : new java.text.SimpleDateFormat("dd/MM/yyyy").format($F{fecha_vencimiento}))]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="4" y="21" width="85" height="14" uuid="7c1d8e2f-2a8b-4b63-8b1f-7c2a3b8d5e06"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[FECHA]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="89" y="21" width="80" height="14" uuid="7c1d8e2f-2a8b-4b63-8b1f-7c2a3b8d5e07"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[MOVIMIENTO]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="169" y="21" width="50" height="14" uuid="7c1d8e2f-2a8b-4b63-8b1f-7c2a3b8d5e08"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[NRO.]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="225" y="21" width="225" height="14" uuid="7c1d8e2f-2a8b-4b63-8b1f-7c2a3b8d5e09"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[CLIENTE / PROVEEDOR]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="450" y="21" width="58" height="14" uuid="7c1d8e2f-2a8b-4b63-8b1f-7c2a3b8d5e10"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[ENTRADA]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="510" y="21" width="58" height="14" uuid="7c1d8e2f-2a8b-4b63-8b1f-7c2a3b8d5e11"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[SALIDA]]></text>
+				</staticText>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="22">
+				<line>
+					<reportElement x="300" y="1" width="270" height="1" uuid="7c1d8e2f-2a8b-4b63-8b1f-7c2a3b8d5e12"/>
+				</line>
+				<staticText>
+					<reportElement x="300" y="3" width="148" height="14" uuid="7c1d8e2f-2a8b-4b63-8b1f-7c2a3b8d5e13"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Totales del periodo]]></text>
+				</staticText>
+				<textField pattern="#,##0.##">
+					<reportElement x="450" y="3" width="58" height="14" uuid="7c1d8e2f-2a8b-4b63-8b1f-7c2a3b8d5e14"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{entradaLote}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,##0.##">
+					<reportElement x="510" y="3" width="58" height="14" uuid="7c1d8e2f-2a8b-4b63-8b1f-7c2a3b8d5e15"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{salidaLote}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,##0.##">
+					<reportElement x="4" y="3" width="250" height="14" uuid="7c1d8e2f-2a8b-4b63-8b1f-7c2a3b8d5e16"/>
+					<textElement>
+						<font size="8" isItalic="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA["Stock actual del lote: " + new java.text.DecimalFormat("#,##0.##").format($F{stock_actual})]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupFooter>
+	</group>
+	<title>
+		<band height="62" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="0" width="250" height="14" uuid="7c1d8e2f-2a8b-4b63-8b1f-7c2a3b8d5e17"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{empresa} == null ? "" : $P{empresa}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd/MM/yyyy HH:mm">
+				<reportElement x="450" y="0" width="120" height="14" uuid="7c1d8e2f-2a8b-4b63-8b1f-7c2a3b8d5e18"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new Date()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="18" width="570" height="22" uuid="7c1d8e2f-2a8b-4b63-8b1f-7c2a3b8d5e19"/>
+				<textElement textAlignment="Center">
+					<font size="14" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{titulo}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="40" width="570" height="16" uuid="7c1d8e2f-2a8b-4b63-8b1f-7c2a3b8d5e20"/>
+				<textElement textAlignment="Center">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{subtitulo} == null ? "" : $P{subtitulo}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<textField pattern="dd/MM/yyyy HH:mm">
+				<reportElement x="4" y="0" width="85" height="14" uuid="7c1d8e2f-2a8b-4b63-8b1f-7c2a3b8d5e21"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{fecha}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="89" y="0" width="80" height="14" uuid="7c1d8e2f-2a8b-4b63-8b1f-7c2a3b8d5e22"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA["COMPRA".equals($F{tipo}) ? "Compra" : ("VENTA".equals($F{tipo}) ? "Venta" : ("ANULA_COMPRA".equals($F{tipo}) ? "Anul. compra" : ("ANULA_VENTA".equals($F{tipo}) ? "Anul. venta" : $F{tipo})))]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="169" y="0" width="50" height="14" uuid="7c1d8e2f-2a8b-4b63-8b1f-7c2a3b8d5e23"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{referencia}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="225" y="0" width="225" height="14" uuid="7c1d8e2f-2a8b-4b63-8b1f-7c2a3b8d5e24"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{tercero} == null ? "" : $F{tercero}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.##" isBlankWhenNull="true">
+				<reportElement x="450" y="0" width="58" height="14" uuid="7c1d8e2f-2a8b-4b63-8b1f-7c2a3b8d5e25"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{entrada} == 0 ? null : $F{entrada}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.##" isBlankWhenNull="true">
+				<reportElement x="510" y="0" width="58" height="14" uuid="7c1d8e2f-2a8b-4b63-8b1f-7c2a3b8d5e26"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{salida} == 0 ? null : $F{salida}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<pageFooter>
+		<band height="16" splitType="Stretch">
+			<textField>
+				<reportElement x="420" y="2" width="110" height="12" uuid="7c1d8e2f-2a8b-4b63-8b1f-7c2a3b8d5e27"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Pagina " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report">
+				<reportElement x="530" y="2" width="40" height="12" uuid="7c1d8e2f-2a8b-4b63-8b1f-7c2a3b8d5e28"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[" de " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="2" width="200" height="12" uuid="7c1d8e2f-2a8b-4b63-8b1f-7c2a3b8d5e29"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[STK-GESTION - Trazabilidad de lotes]]></text>
+			</staticText>
+		</band>
+	</pageFooter>
+	<noData>
+		<band height="40">
+			<staticText>
+				<reportElement x="0" y="10" width="570" height="20" uuid="7c1d8e2f-2a8b-4b63-8b1f-7c2a3b8d5e30"/>
+				<textElement textAlignment="Center">
+					<font size="11"/>
+				</textElement>
+				<text><![CDATA[No hay movimientos de lotes para los filtros seleccionados.]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

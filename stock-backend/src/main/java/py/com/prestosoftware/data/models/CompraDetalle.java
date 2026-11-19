@@ -20,8 +20,40 @@ public class CompraDetalle {
 	private Date fecha;
 	@Column(name = "precio_fob")
 	private Double precioFob;
-	
+
+	// Control de lote (solo para productos con es_lote = 1)
+	@Column(name = "lote_id")
+	private Long loteId;
+	@Column(name = "codigo_lote")
+	private String codigoLote;
+	@Column(name = "fecha_vencimiento")
+	private Date fechaVencimiento;
+
 	public CompraDetalle() {}
+
+	public Long getLoteId() {
+		return loteId;
+	}
+
+	public void setLoteId(Long loteId) {
+		this.loteId = loteId;
+	}
+
+	public String getCodigoLote() {
+		return codigoLote;
+	}
+
+	public void setCodigoLote(String codigoLote) {
+		this.codigoLote = codigoLote;
+	}
+
+	public Date getFechaVencimiento() {
+		return fechaVencimiento;
+	}
+
+	public void setFechaVencimiento(Date fechaVencimiento) {
+		this.fechaVencimiento = fechaVencimiento;
+	}
 
 	public Double getCantidad() {
 		return cantidad;

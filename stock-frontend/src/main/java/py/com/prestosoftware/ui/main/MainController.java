@@ -64,6 +64,8 @@ import py.com.prestosoftware.ui.forms.ProveedorAddPanel;
 import py.com.prestosoftware.ui.reports.InformeAgrupadoIngresoEgresoCajaDialog;
 import py.com.prestosoftware.ui.reports.InformeResumenCajaDialog;
 import py.com.prestosoftware.ui.reports.InformeStockDeposito;
+import py.com.prestosoftware.ui.reports.InformeLotesDialog;
+import py.com.prestosoftware.client.LoteApiClient;
 import py.com.prestosoftware.ui.reports.UtilidadProductoDialog;
 import py.com.prestosoftware.ui.search.CompraDialog;
 import py.com.prestosoftware.ui.search.CondicionPagoDialog;
@@ -239,6 +241,10 @@ public class MainController extends AbstractFrameController {
 	@Autowired
 	private InformeStockDeposito informeStockDeposito;
 	@Autowired
+	private InformeLotesDialog informeLotesDialog;
+	@Autowired
+	private LoteApiClient loteApiClient;
+	@Autowired
 	private UtilidadProductoDialog utilidadProductoDialog;
 	@Autowired
 	private InformeResumenCajaDialog informeResumenCajaDialog;
@@ -409,6 +415,7 @@ public class MainController extends AbstractFrameController {
 //		registerOpenMenu(mainMenuFrame.getMnuSaldoStock(), (e) -> openSaldoStock());
 		
 		registerOpenMenu(mainMenuFrame.getMnuInfStockPorDeposito(), (e) -> openInformeStockDeposito());
+		registerOpenMenu(mainMenuFrame.getMnuInfLotesVencimientos(), (e) -> openInformeLotes());
 		registerOpenMenu(mainMenuFrame.getMnuInfCuentaARecibirVencimientoCliente(), (e) -> openVencimientoCuentaARecibir());
 		registerOpenMenu(mainMenuFrame.getMnuInfCuentaAPagarVencimientoProveedor(), (e) -> openVencimientoCuentaAPagar());
 		registerOpenMenu(mainMenuFrame.getMnuInfResumenUtilidadProducto(), (e) -> openUtilidadProducto());
@@ -536,6 +543,11 @@ public class MainController extends AbstractFrameController {
 	
 	private void openInformeStockDeposito() {
 		informeStockDeposito.setVisible(true);
+	}
+
+	private void openInformeLotes() {
+		informeLotesDialog.inicializar();
+		informeLotesDialog.setVisible(true);
 	}
 	
 	private void openVencimientoCuentaARecibir() {
@@ -737,7 +749,7 @@ public class MainController extends AbstractFrameController {
 	private void openVenta() {
 		//inicializaVenta();
 		itemTableModel= new VentaItemTableModel();
-		ventaPanel = new VentaPanel(itemTableModel, clientDialog, vendedorDialog, depositoDialog, productoDialogV, ventaValidator, ventaService, clienteService, clientePaisApiClient, vendedorService, usuarioRolApiClient, depositoService, productoService, condicionDialog, saldoDeposito, condicionPagoService, configService, movCajaApiClient, cajaService, pagoService, consultaVentasDelDiaDialog, movimientoIngresoApiClient, movimientoEgresoApiClient, movimientoItemIngresoApiClient, movimientoItemEgresoApiClient, procesoCobroVentasService, cuentaARecibirService, itemCuentaARecibirApiClient, clienteAddPanel, productoController);
+		ventaPanel = new VentaPanel(itemTableModel, clientDialog, vendedorDialog, depositoDialog, productoDialogV, ventaValidator, ventaService, clienteService, clientePaisApiClient, vendedorService, usuarioRolApiClient, depositoService, productoService, condicionDialog, saldoDeposito, condicionPagoService, configService, movCajaApiClient, cajaService, pagoService, consultaVentasDelDiaDialog, movimientoIngresoApiClient, movimientoEgresoApiClient, movimientoItemIngresoApiClient, movimientoItemEgresoApiClient, procesoCobroVentasService, cuentaARecibirService, itemCuentaARecibirApiClient, clienteAddPanel, productoController, loteApiClient);
 		ventaPanel.clearForm();
 		ventaPanel.getConfig();
 		ventaPanel.setVisible(true);
@@ -806,7 +818,7 @@ public class MainController extends AbstractFrameController {
 				compraService, proveedorService, compraValidator, productoService, 
 				 condicionPagoDialog, condicionPagoService, configService, movCajaApiClient, cajaService, pagoService, 
 				 	movimientoIngresoApiClient,	movimientoItemIngresoApiClient, movimientoEgresoApiClient, movimientoItemEgresoApiClient, procesoPagoComprasService,
-					procesoPagoProveedoresService, cuentaAPagarService, itemCuentaAPagarApiClient, productoController);
+					procesoPagoProveedoresService, cuentaAPagarService, itemCuentaAPagarApiClient, productoController, loteApiClient);
 		compraLocalPanel.getConfig();
 		compraLocalPanel.clearForm();
 		compraLocalPanel.newCompra();

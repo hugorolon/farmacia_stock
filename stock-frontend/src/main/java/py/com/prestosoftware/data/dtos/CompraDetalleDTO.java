@@ -16,8 +16,36 @@ public class CompraDetalleDTO {
 	private Double costoCif;
 	private Date fecha;
 	private Double precioFob;
-	
+	// Control de lote (productos con es_lote = 1)
+	private Long loteId;
+	private String codigoLote;
+	private Date fechaVencimiento;
+
 	public CompraDetalleDTO() {}
+
+	public Long getLoteId() {
+		return loteId;
+	}
+
+	public void setLoteId(Long loteId) {
+		this.loteId = loteId;
+	}
+
+	public String getCodigoLote() {
+		return codigoLote;
+	}
+
+	public void setCodigoLote(String codigoLote) {
+		this.codigoLote = codigoLote;
+	}
+
+	public Date getFechaVencimiento() {
+		return fechaVencimiento;
+	}
+
+	public void setFechaVencimiento(Date fechaVencimiento) {
+		this.fechaVencimiento = fechaVencimiento;
+	}
 
 	public Double getCantidad() {
 		return cantidad;

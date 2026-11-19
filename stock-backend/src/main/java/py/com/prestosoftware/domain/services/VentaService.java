@@ -57,12 +57,15 @@ public class VentaService {
 	private MovimientoEgresoRepository repositoryMovimientoEgreso;
 	private MovimientoItemEgresoRepository repositoryMovimientoItemEgreso;
 	private ObjectMapper objectMapper;
+	private LoteService loteService;
 
 	@Autowired
-	public VentaService(VentaRepository repository, ClienteRepository repositoryCliente, ProductoRepository repositoryProducto, MovimientoCajaRepository repositoryPago, MovimientoIngresoRepository repositoryMovimientoIngreso, 
+	public VentaService(VentaRepository repository, ClienteRepository repositoryCliente, ProductoRepository repositoryProducto, MovimientoCajaRepository repositoryPago, MovimientoIngresoRepository repositoryMovimientoIngreso,
 				MovimientoItemIngresoRepository repositoryMovimientoItemIngreso, ProcesoCobroVentasRepository repositoryProcesoCobroVentas,CuentaARecibirRepository repositoryCuentaARecibir,
-				ItemCuentaARecibirRepository repositoryItemCuentaARecibir, MovimientoEgresoRepository repositoryMovimientoEgreso, MovimientoItemEgresoRepository repositoryMovimientoItemEgreso, ObjectMapper objectMapper) {
+				ItemCuentaARecibirRepository repositoryItemCuentaARecibir, MovimientoEgresoRepository repositoryMovimientoEgreso, MovimientoItemEgresoRepository repositoryMovimientoItemEgreso, ObjectMapper objectMapper,
+				LoteService loteService) {
 		this.repository = repository;
+		this.loteService = loteService;
 		this.repositoryCliente = repositoryCliente;
 		this.repositoryProducto =repositoryProducto;
 		this.repositoryPago=  repositoryPago;
@@ -136,6 +139,12 @@ public class VentaService {
 				} catch (Exception e) {
 					// TODO: handle exception
 				}
+				// Salida de lotes FEFO (productos con control de lote) + kardex de lotes
+				List<String> faltantes = loteService.registrarSalidaVenta(v,
+						v.getVendedor() != null ? v.getVendedor().getId() : GlobalVars.USER_ID);
+				for (String faltante : faltantes) {
+					System.out.println("VentaService.save - lotes: " + faltante);
+				}
 				try {
 					movimientoIngresoProcesoCobroVenta(v);					
 				} catch (Exception e) {
@@ -157,6 +166,7 @@ public class VentaService {
 		if (lanzamientoCaja == 0) {
 			try {
 				updateStockProductRemoved(items, lanzamientoCaja,1);
+				loteService.revertir(py.com.prestosoftware.data.models.LoteMovimiento.VENTA, v.getId(), GlobalVars.USER_ID);
 				removeMovCaja(v);
 				removeMovimientoIngresoProcesoCobroVenta(v);
 			
